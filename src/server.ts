@@ -15,7 +15,6 @@ const server = new McpServer({
     resources: {},
     tools: {},
     prompts: {},
-   
   },
 });
 
@@ -100,7 +99,6 @@ server.tool(
     }
   }
 );
-
 
 function generateRealisticFakeUser() {
   // More sophisticated fake data generation
@@ -224,7 +222,6 @@ function generateRealisticFakeUser() {
     phone: `(${areaCode}) ${exchange}-${number}`,
   };
 }
-
 
 server.prompt(
   "generate-fake-user",

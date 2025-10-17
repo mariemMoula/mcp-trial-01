@@ -431,90 +431,50 @@ async function handleQuery(tools: Tool[]) {
   }
 }
 
-// Helper function to convert JSON Schema to Zod schema
-function convertJsonSchemaToZod(jsonSchema: any): z.ZodObject<any> {
-  const properties = jsonSchema.properties || {};
-  const required = jsonSchema.required || [];
+// 🎯 Zod Validation Schemas (consistent with server)
+const emailSchema = z
+  .string()
+  .email("Please enter a valid email address (e.g., user@example.com)");
+const phoneSchema = z
+  .string()
+  .regex(
+    /^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/,
+    "Please enter a valid phone number (e.g., (555) 123-4567 or 555-123-4567)"
+  );
+const styleSchema = z.enum(["professional", "casual", "international"], {
+  errorMap: () => ({
+    message: "Style must be one of: professional, casual, international",
+  }),
+});
+const userIdSchema = z.string().regex(/^\d+$/, "ID must be a number");
+const nonEmptyStringSchema = z.string().min(1, "Input cannot be empty");
 
-  const shape: Record<string, z.ZodTypeAny> = {};
-
-  for (const [key, value] of Object.entries(properties)) {
-    const prop = value as any;
-    let zodType: z.ZodTypeAny;
-
-    // Convert based on JSON Schema type
-    switch (prop.type) {
-      case "string":
-        zodType = z.string();
-        if (prop.description) {
-          zodType = zodType.describe(prop.description);
-        }
-        break;
-      case "number":
-        zodType = z.number();
-        if (prop.description) {
-          zodType = zodType.describe(prop.description);
-        }
-        break;
-      case "boolean":
-        zodType = z.boolean();
-        if (prop.description) {
-          zodType = zodType.describe(prop.description);
-        }
-        break;
-      case "array":
-        zodType = z.array(z.any());
-        if (prop.description) {
-          zodType = zodType.describe(prop.description);
-        }
-        break;
-      case "object":
-        zodType = z.object({});
-        if (prop.description) {
-          zodType = zodType.describe(prop.description);
-        }
-        break;
-      default:
-        zodType = z.any();
-    }
-
-    // Make optional if not in required array
-    if (!required.includes(key)) {
-      zodType = zodType.optional();
-    }
-
-    shape[key] = zodType;
-  }
-
-  return z.object(shape);
-}
-
-// Helper function to validate and retry user input
+// Helper function to validate and retry user input using Zod
 async function getValidatedInput(
   message: string,
-  validator?: (value: string) => { isValid: boolean; error?: string }
+  zodSchema?: z.ZodSchema
 ): Promise<string> {
   while (true) {
     try {
       const value = await input({ message });
 
-      // If no validator provided, accept any non-empty input
-      if (!validator) {
-        if (value.trim() === "") {
-          console.log("❌ Input cannot be empty. Please try again.");
+      // If no schema provided, just check for non-empty
+      if (!zodSchema) {
+        const result = nonEmptyStringSchema.safeParse(value);
+        if (result.success) {
+          return result.data.trim();
+        } else {
+          console.log(`❌ ${result.error.errors[0].message} Please try again.`);
           continue;
         }
-        return value.trim();
       }
 
-      // Run validation
-      const validation = validator(value);
-      if (validation.isValid) {
-        return value.trim();
+      // Use Zod validation
+      const result = zodSchema.safeParse(value.trim());
+      if (result.success) {
+        return result.data;
       } else {
-        console.log(
-          `❌ ${validation.error || "Invalid input"} Please try again.`
-        );
+        console.log(`❌ ${result.error.errors[0].message} Please try again.`);
         continue;
       }
     } catch (error) {
@@ -524,53 +484,7 @@ async function getValidatedInput(
   }
 }
 
-// Email validator
-function validateEmail(email: string): { isValid: boolean; error?: string } {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!email.trim()) {
-    return { isValid: false, error: "Email cannot be empty." };
-  }
-  if (!emailRegex.test(email)) {
-    return {
-      isValid: false,
-      error: "Please enter a valid email address (e.g., user@example.com).",
-    };
-  }
-  return { isValid: true };
-}
-
-// Phone validator
-function validatePhone(phone: string): { isValid: boolean; error?: string } {
-  const phoneRegex = /^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/;
-  if (!phone.trim()) {
-    return { isValid: false, error: "Phone cannot be empty." };
-  }
-  if (!phoneRegex.test(phone)) {
-    return {
-      isValid: false,
-      error:
-        "Please enter a valid phone number (e.g., (555) 123-4567 or 555-123-4567).",
-    };
-  }
-  return { isValid: true };
-}
-
-// Style validator for prompts
-function validateStyle(style: string): { isValid: boolean; error?: string } {
-  const validStyles = ["professional", "casual", "international"];
-  if (!style.trim()) {
-    return { isValid: false, error: "Style cannot be empty." };
-  }
-  if (!validStyles.includes(style.toLowerCase())) {
-    return {
-      isValid: false,
-      error: `Style must be one of: ${validStyles.join(", ")}`,
-    };
-  }
-  return { isValid: true };
-}
-
-// a function that will be called when the user picks a tool
+// Current approach (recommended to keep)
 async function handleTool(tool: Tool) {
   const args: Record<string, string> = {}; // the passed arguments to the tool
 
@@ -582,20 +496,18 @@ async function handleTool(tool: Tool) {
   )) {
     const propertyType = (value as { type: string }).type;
 
-    // Choose appropriate validator based on field name and type
-    let validator:
-      | ((value: string) => { isValid: boolean; error?: string })
-      | undefined;
+    // Choose appropriate Zod schema based on field name and type
+    let zodSchema: z.ZodSchema | undefined;
 
     if (key.toLowerCase().includes("email")) {
-      validator = validateEmail;
+      zodSchema = emailSchema;
     } else if (key.toLowerCase().includes("phone")) {
-      validator = validatePhone;
+      zodSchema = phoneSchema;
     }
 
     args[key] = await getValidatedInput(
       `Enter value for ${key} (${propertyType}):`,
-      validator
+      zodSchema
     );
   }
 
@@ -623,28 +535,18 @@ async function handleResource(uri: string) {
     for (const paramMatch of paramMatches) {
       const paramName = paramMatch.replace("{", "").replace("}", "");
 
-      // Add validation for userId parameters
-      let validator:
-        | ((value: string) => { isValid: boolean; error?: string })
-        | undefined;
+      // Add validation for userId parameters using Zod
+      let zodSchema: z.ZodSchema | undefined;
       if (
         paramName.toLowerCase().includes("userid") ||
         paramName.toLowerCase().includes("id")
       ) {
-        validator = (value: string) => {
-          if (!value.trim()) {
-            return { isValid: false, error: "ID cannot be empty." };
-          }
-          if (!/^\d+$/.test(value.trim())) {
-            return { isValid: false, error: "ID must be a number." };
-          }
-          return { isValid: true };
-        };
+        zodSchema = userIdSchema;
       }
 
       const paramValue = await getValidatedInput(
         `Enter value for ${paramName}:`,
-        validator
+        zodSchema
       );
       finalUri = finalUri.replace(paramMatch, paramValue);
     }
@@ -673,20 +575,18 @@ async function handlePrompt(prompt: Prompt) {
 
   // Loop through the arguments and ask the user for input with validation
   for (const arg of prompt.arguments ?? []) {
-    let validator:
-      | ((value: string) => { isValid: boolean; error?: string })
-      | undefined;
+    let zodSchema: z.ZodSchema | undefined;
 
     // Add specific validation based on argument name
     if (arg.name.toLowerCase().includes("style")) {
-      validator = validateStyle;
+      zodSchema = styleSchema;
     } else if (arg.name.toLowerCase().includes("email")) {
-      validator = validateEmail;
+      zodSchema = emailSchema;
     }
 
     args[arg.name] = await getValidatedInput(
       `Enter value for ${arg.name}:`,
-      validator
+      zodSchema
     );
   }
 
