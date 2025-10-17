@@ -15,8 +15,10 @@ const server = new McpServer({
     resources: {},
     tools: {},
     prompts: {},
+   
   },
 });
+
 // Here, we are defining the "create-user" tool, the name that the ai is going to see, and the second parameter is the description ,then te parameters we will pass in
 server.tool(
   "create-user",
@@ -66,7 +68,7 @@ server.tool(
     openWorldHint: true,
   },
   async () => {
-    // 🎯 CORRECT APPROACH: Use the prompt resource to guide the client
+    //  Use the prompt resource to guide the client
     // The server provides a prompt, the client uses sampling to get AI response
     // This demonstrates the proper MCP architecture pattern
 
@@ -99,8 +101,7 @@ server.tool(
   }
 );
 
-// 🎯 This shows the CORRECT way to handle AI generation in MCP:
-// The server provides prompts, the client uses sampling
+
 function generateRealisticFakeUser() {
   // More sophisticated fake data generation
   const firstNames = [
@@ -224,8 +225,7 @@ function generateRealisticFakeUser() {
   };
 }
 
-// 🎯 CORRECT SAMPLING USAGE: This prompt can be used by the CLIENT with sampling
-// The client calls sampling/createMessage with this prompt to get AI-generated data
+
 server.prompt(
   "generate-fake-user",
   "Generate realistic fake user data using AI (use with sampling from client)",

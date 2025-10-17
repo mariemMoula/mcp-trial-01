@@ -6,6 +6,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import {
   CreateMessageRequestSchema,
+  CreateMessageResultSchema,
   Prompt,
   PromptMessage,
   Tool,
@@ -540,28 +541,29 @@ async function handlePrompt(prompt: Prompt) {
       message: `Enter value for ${arg.name}:`,
     });
   }
-// 🔗 CLIENT → SERVER: "Give me the prompt template"
+  // 🔗 CLIENT → SERVER: "Give me the prompt template"
   const response = await mcp.getPrompt({
-    name: prompt.name,// ← "generate-fake-user"
+    name: prompt.name, // ← "generate-fake-user"
     arguments: args,
   });
 
   for (const message of response.messages) {
-    const result = await handleServerMessagePrompt(message);async function handlePrompt(prompt: Prompt) {
-  // Gets prompt arguments from you
-  const args: Record<string, string> = {};
-  
-  // Calls server to get the prompt template  
-  const response = await mcp.getPrompt({
-    name: prompt.name,      // ← "generate-fake-user"
-    arguments: args,
-  });
+    const result = await handleServerMessagePrompt(message);
+    async function handlePrompt(prompt: Prompt) {
+      // Gets prompt arguments from you
+      const args: Record<string, string> = {};
 
-  // Processes each message in the prompt
-  for (const message of response.messages) {
-    const result = await handleServerMessagePrompt(message); // ← This calls AI!
-  }
-}
+      // Calls server to get the prompt template
+      const response = await mcp.getPrompt({
+        name: prompt.name, // ← "generate-fake-user"
+        arguments: args,
+      });
+
+      // Processes each message in the prompt
+      for (const message of response.messages) {
+        const result = await handleServerMessagePrompt(message); // ← This calls AI!
+      }
+    }
     if (result) {
       console.log("\n--- AI Generated ---");
       console.log(result);
@@ -576,17 +578,19 @@ async function handleServerMessagePrompt(message: PromptMessage) {
   console.log("\n--- Prompt Content ---");
   console.log(message.content.text);
   console.log("---------------------\n");
-  // the confirm function will ask the user if they want to run the prompt
+
   const run = await confirm({
     message: "Would you like to run the above prompt",
     default: true,
   });
 
   if (!run) return;
-  // we will call the ai to run the prompt,THIS IS THE SAMPLING
+
+  // Use AI SDK (the working method)
+  console.log("🤖 Using AI SDK...");
   const { text } = await generateText({
-    model: google("gemini-2.5-flash"), // ← AI model
-    prompt: message.content.text,// ← prompt content
+    model: google("gemini-2.5-flash"),
+    prompt: message.content.text,
   });
 
   return text;
