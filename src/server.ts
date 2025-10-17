@@ -4,9 +4,9 @@ import {
 } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import z from "zod";
-import { CreateMessageResultSchema } from "@modelcontextprotocol/sdk/types.js";
 import fs from "node:fs/promises";
-// here, we create the server
+/************************************************** */
+// here, we set-up the server
 const server = new McpServer({
   name: "Meriame's MCP Trial 01",
   version: "1.0.0",
@@ -17,7 +17,7 @@ const server = new McpServer({
     prompts: {},
   },
 });
-
+/**************************************************/
 // Here, we are defining the "create-user" tool, the name that the ai is going to see, and the second parameter is the description ,then te parameters we will pass in
 server.tool(
   "create-user",
@@ -55,7 +55,7 @@ server.tool(
     }
   }
 );
-
+/**************************************************/
 server.tool(
   "create-random-user",
   "Create a random user with fake data",
@@ -99,7 +99,7 @@ server.tool(
     }
   }
 );
-
+//Creates realistic random user data without AI Contains: Lists of first names, last names, email domains, street names, cities Real-world analogy: Like a random name generator for games
 function generateRealisticFakeUser() {
   // More sophisticated fake data generation
   const firstNames = [
@@ -223,6 +223,9 @@ function generateRealisticFakeUser() {
   };
 }
 
+
+/**************************************************/
+
 server.prompt(
   "generate-fake-user",
   "Generate realistic fake user data using AI (use with sampling from client)",
@@ -263,6 +266,8 @@ No markdown formatting, no explanations, just the raw JSON object.`,
     };
   }
 );
+
+/**************************************************/
 // Here, we will add the resource to the server to fetch all users
 server.resource(
   "users", // name of the resource
@@ -288,6 +293,7 @@ server.resource(
     };
   }
 );
+/**************************************************/
 // Here, we will add the resource to the server to fetch a user by their id
 server.resource(
   "user-details",

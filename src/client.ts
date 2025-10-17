@@ -9,8 +9,10 @@ import {
   PromptMessage,
   Tool,
 } from "@modelcontextprotocol/sdk/types.js";
-import { generateText, jsonSchema, ToolSet } from "ai";
+import { generateText, ToolSet } from "ai";
 import { z } from "zod";
+
+/****************************************** */
 // We will use the cli thanks to the inquirer package
 const mcp = new Client(
   {
@@ -19,6 +21,8 @@ const mcp = new Client(
   },
   { capabilities: {} } // No special capabilities needed
 );
+/****************************************** */
+
 // here, we define the transport protocol
 const transport = new StdioClientTransport({
   command: "npx",
@@ -28,9 +32,11 @@ const transport = new StdioClientTransport({
 const google = createGoogleGenerativeAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
+/****************************************** */
 
 // Alternative: Direct Google SDK
 const directGoogle = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+/****************************************** */
 
 async function main() {
   console.log("in client side...");
@@ -46,6 +52,7 @@ async function main() {
 
   console.log("You are connected!");
   while (true) {
+    /****************************************** */
     // we ask the user what they want to do inside the cli, tool or resource or prompt or query
     const option = await select({
       message: "What would you like to do",
