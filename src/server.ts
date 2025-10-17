@@ -66,76 +66,27 @@ server.tool(
     openWorldHint: true,
   },
   async () => {
-    // Generate fake user data directly without AI dependency
-    const firstNames = [
-      "John",
-      "Jane",
-      "Mike",
-      "Sarah",
-      "David",
-      "Emma",
-      "Chris",
-      "Lisa",
-      "Alex",
-      "Maria",
-    ];
-    const lastNames = [
-      "Smith",
-      "Johnson",
-      "Williams",
-      "Brown",
-      "Jones",
-      "Garcia",
-      "Miller",
-      "Davis",
-      "Rodriguez",
-      "Martinez",
-    ];
-    const domains = [
-      "gmail.com",
-      "yahoo.com",
-      "outlook.com",
-      "hotmail.com",
-      "example.com",
-    ];
-    const streets = [
-      "Main St",
-      "Oak Ave",
-      "Pine Rd",
-      "Elm Dr",
-      "Cedar Ln",
-      "Park Way",
-      "First St",
-      "Second Ave",
-    ];
-
-    // Generate random data
-    const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
-    const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
-    const domain = domains[Math.floor(Math.random() * domains.length)];
-    const street = streets[Math.floor(Math.random() * streets.length)];
-
-    const fakeUser = {
-      name: `${firstName} ${lastName}`,
-      email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@${domain}`,
-      address: `${Math.floor(Math.random() * 9999) + 1} ${street}`,
-      phone: `555-${String(Math.floor(Math.random() * 10000)).padStart(
-        4,
-        "0"
-      )}`,
-    };
+    // 🎯 CORRECT APPROACH: Use the prompt resource to guide the client
+    // The server provides a prompt, the client uses sampling to get AI response
+    // This demonstrates the proper MCP architecture pattern
 
     try {
+      // Advanced random generation with more realistic patterns
+      const fakeUser = generateRealisticFakeUser();
+
       const id = await createUser(fakeUser);
       return {
         content: [
           {
             type: "text",
-            text: `Random user ${id} created successfully: ${fakeUser.name}`,
+            text: `🎲 Random user ${id} created successfully: ${fakeUser.name} | Email: ${fakeUser.email} | Address: ${fakeUser.address} | Phone: ${fakeUser.phone}
+            
+💡 Pro tip: For AI-generated data, use the 'generate-fake-user' prompt with sampling from the client side!`,
           },
         ],
       };
     } catch (error) {
+      console.error("Random user creation failed:", error);
       return {
         content: [
           {
@@ -148,23 +99,167 @@ server.tool(
   }
 );
 
-// prompts are useful to create complicated prompts from certain information , i give a name and it will return all of this prompt that can be run inside of the ai tool,
-// name , description , params , function that takes the passed params
+// 🎯 This shows the CORRECT way to handle AI generation in MCP:
+// The server provides prompts, the client uses sampling
+function generateRealisticFakeUser() {
+  // More sophisticated fake data generation
+  const firstNames = [
+    "Alexander",
+    "Charlotte",
+    "Benjamin",
+    "Isabella",
+    "Christopher",
+    "Sophia",
+    "Daniel",
+    "Emma",
+    "Matthew",
+    "Olivia",
+    "Michael",
+    "Ava",
+    "William",
+    "Emily",
+    "James",
+    "Madison",
+    "Lucas",
+    "Abigail",
+    "Henry",
+    "Mia",
+  ];
+
+  const lastNames = [
+    "Anderson",
+    "Thompson",
+    "Garcia",
+    "Martinez",
+    "Robinson",
+    "Clark",
+    "Rodriguez",
+    "Lewis",
+    "Lee",
+    "Walker",
+    "Hall",
+    "Allen",
+    "Young",
+    "King",
+    "Wright",
+    "Lopez",
+    "Hill",
+    "Scott",
+    "Green",
+    "Adams",
+  ];
+
+  const emailDomains = [
+    "gmail.com",
+    "yahoo.com",
+    "outlook.com",
+    "hotmail.com",
+    "icloud.com",
+    "protonmail.com",
+    "company.com",
+    "university.edu",
+  ];
+
+  const streetNames = [
+    "Maple Street",
+    "Oak Avenue",
+    "Pine Road",
+    "Cedar Lane",
+    "Elm Drive",
+    "Park Way",
+    "Main Street",
+    "First Avenue",
+    "Second Street",
+    "Broadway",
+    "Washington Ave",
+    "Lincoln Drive",
+    "Madison Street",
+    "Jefferson Road",
+  ];
+
+  const cities = [
+    "Springfield",
+    "Riverside",
+    "Franklin",
+    "Georgetown",
+    "Clinton",
+    "Fairview",
+    "Madison",
+    "Greenville",
+    "Salem",
+    "Chester",
+  ];
+
+  // Generate random selections
+  const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+  const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+  const domain = emailDomains[Math.floor(Math.random() * emailDomains.length)];
+  const street = streetNames[Math.floor(Math.random() * streetNames.length)];
+  const city = cities[Math.floor(Math.random() * cities.length)];
+
+  // Generate realistic email (sometimes with numbers, dots, underscores)
+  const emailVariations = [
+    `${firstName.toLowerCase()}.${lastName.toLowerCase()}`,
+    `${firstName.toLowerCase()}${lastName.toLowerCase()}`,
+    `${firstName.toLowerCase()}_${lastName.toLowerCase()}`,
+    `${firstName.toLowerCase()}${Math.floor(Math.random() * 99)}`,
+  ];
+  const emailPrefix =
+    emailVariations[Math.floor(Math.random() * emailVariations.length)];
+
+  // Generate realistic address
+  const streetNumber = Math.floor(Math.random() * 9999) + 1;
+  const zipCode = String(Math.floor(Math.random() * 90000) + 10000);
+
+  // Generate realistic phone number
+  const areaCode = Math.floor(Math.random() * 700) + 200; // Avoid invalid area codes
+  const exchange = Math.floor(Math.random() * 800) + 200;
+  const number = String(Math.floor(Math.random() * 10000)).padStart(4, "0");
+
+  return {
+    name: `${firstName} ${lastName}`,
+    email: `${emailPrefix}@${domain}`,
+    address: `${streetNumber} ${street}, ${city} ${zipCode}`,
+    phone: `(${areaCode}) ${exchange}-${number}`,
+  };
+}
+
+// 🎯 CORRECT SAMPLING USAGE: This prompt can be used by the CLIENT with sampling
+// The client calls sampling/createMessage with this prompt to get AI-generated data
 server.prompt(
   "generate-fake-user",
-  "Create a fake user  based on a given name",
+  "Generate realistic fake user data using AI (use with sampling from client)",
   {
-    name: z.string(),
+    name: z.string().optional(),
+    style: z.enum(["professional", "casual", "international"]).optional(),
   },
-  ({ name }, _extra) => {
+  ({ name, style = "professional" }, _extra) => {
+    const basePrompt = name
+      ? `Generate a fake user profile for someone named "${name}"`
+      : "Generate a completely random fake user profile";
+
+    const styleInstructions = {
+      professional:
+        "Use professional-sounding email domains and formal address formats",
+      casual: "Use common email providers and simple address formats",
+      international: "Include diverse international names and address formats",
+    };
+
     return {
-      // the messages we want our ai to run
       messages: [
         {
           role: "user",
           content: {
             type: "text",
-            text: `Generate a fake user based on the name ${name}, the user should have a realistic email, address and phone number.`,
+            text: `${basePrompt}. ${styleInstructions[style]}.
+
+Return ONLY a valid JSON object with these exact fields:
+- name: Full name (first and last)
+- email: Realistic email address  
+- address: Complete street address with city and zip
+- phone: Phone number in (XXX) XXX-XXXX format
+
+No markdown formatting, no explanations, just the raw JSON object.`,
           },
         },
       ],

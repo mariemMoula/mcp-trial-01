@@ -540,14 +540,28 @@ async function handlePrompt(prompt: Prompt) {
       message: `Enter value for ${arg.name}:`,
     });
   }
-
+// 🔗 CLIENT → SERVER: "Give me the prompt template"
   const response = await mcp.getPrompt({
-    name: prompt.name,
+    name: prompt.name,// ← "generate-fake-user"
     arguments: args,
   });
 
   for (const message of response.messages) {
-    const result = await handleServerMessagePrompt(message);
+    const result = await handleServerMessagePrompt(message);async function handlePrompt(prompt: Prompt) {
+  // Gets prompt arguments from you
+  const args: Record<string, string> = {};
+  
+  // Calls server to get the prompt template  
+  const response = await mcp.getPrompt({
+    name: prompt.name,      // ← "generate-fake-user"
+    arguments: args,
+  });
+
+  // Processes each message in the prompt
+  for (const message of response.messages) {
+    const result = await handleServerMessagePrompt(message); // ← This calls AI!
+  }
+}
     if (result) {
       console.log("\n--- AI Generated ---");
       console.log(result);
@@ -569,10 +583,10 @@ async function handleServerMessagePrompt(message: PromptMessage) {
   });
 
   if (!run) return;
-  // we will call the ai to run the prompt
+  // we will call the ai to run the prompt,THIS IS THE SAMPLING
   const { text } = await generateText({
-    model: google("gemini-2.5-flash"),
-    prompt: message.content.text,
+    model: google("gemini-2.5-flash"), // ← AI model
+    prompt: message.content.text,// ← prompt content
   });
 
   return text;

@@ -178,5 +178,33 @@
     "email": "alex.davis@example.com",
     "address": "5028 Elm Dr",
     "phone": "555-1978"
+  },
+  {
+    "id": 25,
+    "name": "Emma Smith",
+    "email": "emma.smith@gmail.com",
+    "address": "1402 Second Ave",
+    "phone": "555-2568"
+  },
+  {
+    "id": 26,
+    "name": "abir",
+    "email": "abir@hotmail.com",
+    "address": "tn",
+    "phone": "741236985"
+  },
+  {
+    "id": 27,
+    "name": "James Wright",
+    "email": "james_wright@hotmail.com",
+    "address": "6882 Madison Street, Georgetown 52927",
+    "phone": "(461) 468-7967"
+  },
+  {
+    "id": 28,
+    "name": "Isabella Lopez",
+    "email": "isabellalopez@yahoo.com",
+    "address": "9578 Washington Ave, Chester 32680",
+    "phone": "(415) 538-8690"
   }
 ]
