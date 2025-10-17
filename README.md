@@ -12,7 +12,12 @@ To run the server in VS Code, follow these steps:
 To run the server, open a terminal and run the following command:
 npm run server:inspect
 
-This will start the server and display the list of tools and resources available.
+# Running the client
+
+To run the client, open a terminal and run the following command:
+npm run client:dev
+
+This will start the client and provide you with a list of choices.
 
 # Server Configuration
 
