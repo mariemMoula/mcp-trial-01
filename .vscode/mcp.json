@@ -1,0 +1,19 @@
+{
+	"servers": {
+		"mcp-trial-01": {
+			"type": "stdio",
+			"command": "npm",
+			"args": [
+				"run",
+				"server:dev"
+			],
+			"dev" :{
+				"watch": "build/**/*.js",
+				"debug": {
+					"type": "node"
+				}
+			}
+		}
+	},
+	"inputs": []
+}

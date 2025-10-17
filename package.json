@@ -1,0 +1,29 @@
+{
+  "name": "mcp-trial-01",
+  "version": "1.0.0",
+  "scripts": {
+    "server:build": "tsc",
+    "server:build:watch": "tsc --watch",
+    "server:dev": "tsx src/server.ts",
+    "server:inspect": "npx @modelcontextprotocol/inspector npm run server:dev",
+    "client:dev": "tsx src/client.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@modelcontextprotocol/inspector": "^0.17.1",
+    "@types/node": "^24.0.3",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@ai-sdk/google": "^2.0.23",
+    "@inquirer/prompts": "^7.9.0",
+    "@modelcontextprotocol/sdk": "^1.13.0",
+    "ai": "^5.0.72",
+    "dotenv": "^16.5.0",
+    "zod": "^3.25.67"
+  }
+}
