@@ -256,7 +256,7 @@ async function testDirectGoogleSDK(tools: Tool[], query: string) {
   }
 }
 
-// FIXED: Properly convert MCP tools to AI SDK format
+// Properly convert MCP tools to AI SDK format
 async function handleQuery(tools: Tool[]) {
   const query = await input({ message: "Enter your query" });
 
@@ -489,25 +489,128 @@ function convertJsonSchemaToZod(jsonSchema: any): z.ZodObject<any> {
   return z.object(shape);
 }
 
+// Helper function to validate and retry user input
+async function getValidatedInput(
+  message: string,
+  validator?: (value: string) => { isValid: boolean; error?: string }
+): Promise<string> {
+  while (true) {
+    try {
+      const value = await input({ message });
+
+      // If no validator provided, accept any non-empty input
+      if (!validator) {
+        if (value.trim() === "") {
+          console.log("❌ Input cannot be empty. Please try again.");
+          continue;
+        }
+        return value.trim();
+      }
+
+      // Run validation
+      const validation = validator(value);
+      if (validation.isValid) {
+        return value.trim();
+      } else {
+        console.log(
+          `❌ ${validation.error || "Invalid input"} Please try again.`
+        );
+        continue;
+      }
+    } catch (error) {
+      console.log("❌ Error reading input. Please try again.");
+      continue;
+    }
+  }
+}
+
+// Email validator
+function validateEmail(email: string): { isValid: boolean; error?: string } {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!email.trim()) {
+    return { isValid: false, error: "Email cannot be empty." };
+  }
+  if (!emailRegex.test(email)) {
+    return {
+      isValid: false,
+      error: "Please enter a valid email address (e.g., user@example.com).",
+    };
+  }
+  return { isValid: true };
+}
+
+// Phone validator
+function validatePhone(phone: string): { isValid: boolean; error?: string } {
+  const phoneRegex = /^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/;
+  if (!phone.trim()) {
+    return { isValid: false, error: "Phone cannot be empty." };
+  }
+  if (!phoneRegex.test(phone)) {
+    return {
+      isValid: false,
+      error:
+        "Please enter a valid phone number (e.g., (555) 123-4567 or 555-123-4567).",
+    };
+  }
+  return { isValid: true };
+}
+
+// Style validator for prompts
+function validateStyle(style: string): { isValid: boolean; error?: string } {
+  const validStyles = ["professional", "casual", "international"];
+  if (!style.trim()) {
+    return { isValid: false, error: "Style cannot be empty." };
+  }
+  if (!validStyles.includes(style.toLowerCase())) {
+    return {
+      isValid: false,
+      error: `Style must be one of: ${validStyles.join(", ")}`,
+    };
+  }
+  return { isValid: true };
+}
+
 // a function that will be called when the user picks a tool
 async function handleTool(tool: Tool) {
   const args: Record<string, string> = {}; // the passed arguments to the tool
+
+  console.log(`\n🔧 Setting up tool: ${tool.name}`);
+  console.log(`📝 Description: ${tool.description}\n`);
+
   for (const [key, value] of Object.entries(
-    // if wse have a parameter , we will loop through each to extract it
     tool.inputSchema.properties ?? {}
   )) {
-    args[key] = await input({
-      // this allows me to get input for a user
-      message: `Enter value for ${key} (${(value as { type: string }).type}):`,
-    });
-  }
-  // calling the tool via passing the tool name and the arguments
-  const res = await mcp.callTool({
-    name: tool.name,
-    arguments: args,
-  });
+    const propertyType = (value as { type: string }).type;
 
-  console.log((res.content as [{ text: string }])[0].text);
+    // Choose appropriate validator based on field name and type
+    let validator:
+      | ((value: string) => { isValid: boolean; error?: string })
+      | undefined;
+
+    if (key.toLowerCase().includes("email")) {
+      validator = validateEmail;
+    } else if (key.toLowerCase().includes("phone")) {
+      validator = validatePhone;
+    }
+
+    args[key] = await getValidatedInput(
+      `Enter value for ${key} (${propertyType}):`,
+      validator
+    );
+  }
+
+  try {
+    console.log("🚀 Calling tool...");
+    const res = await mcp.callTool({
+      name: tool.name,
+      arguments: args,
+    });
+
+    console.log((res.content as [{ text: string }])[0].text);
+  } catch (error) {
+    console.log("❌ Error calling tool:", (error as Error).message);
+    console.log("Please check your inputs and try again.");
+  }
 }
 
 async function handleResource(uri: string) {
@@ -515,65 +618,103 @@ async function handleResource(uri: string) {
   const paramMatches = uri.match(/{([^}]+)}/g);
 
   if (paramMatches != null) {
+    console.log(`\n📚 Setting up resource: ${uri}`);
+
     for (const paramMatch of paramMatches) {
       const paramName = paramMatch.replace("{", "").replace("}", "");
-      const paramValue = await input({
-        message: `Enter value for ${paramName}:`,
-      });
-      finalUri = finalUri.replace(paramMatch, paramValue); //relace the dynamic parameter with the user's input
+
+      // Add validation for userId parameters
+      let validator:
+        | ((value: string) => { isValid: boolean; error?: string })
+        | undefined;
+      if (
+        paramName.toLowerCase().includes("userid") ||
+        paramName.toLowerCase().includes("id")
+      ) {
+        validator = (value: string) => {
+          if (!value.trim()) {
+            return { isValid: false, error: "ID cannot be empty." };
+          }
+          if (!/^\d+$/.test(value.trim())) {
+            return { isValid: false, error: "ID must be a number." };
+          }
+          return { isValid: true };
+        };
+      }
+
+      const paramValue = await getValidatedInput(
+        `Enter value for ${paramName}:`,
+        validator
+      );
+      finalUri = finalUri.replace(paramMatch, paramValue);
     }
   }
 
-  const res = await mcp.readResource({
-    uri: finalUri,
-  });
+  try {
+    console.log("🚀 Fetching resource...");
+    const res = await mcp.readResource({
+      uri: finalUri,
+    });
 
-  console.log(
-    JSON.stringify(JSON.parse(res.contents[0].text as string), null, 2)
-  );
+    console.log(
+      JSON.stringify(JSON.parse(res.contents[0].text as string), null, 2)
+    );
+  } catch (error) {
+    console.log("❌ Error fetching resource:", (error as Error).message);
+    console.log("Please check your inputs and try again.");
+  }
 }
 
 async function handlePrompt(prompt: Prompt) {
   const args: Record<string, string> = {};
-  // looping through the arguments, and asking the user for input
+
+  console.log(`\n💬 Setting up prompt: ${prompt.name}`);
+  console.log(`📝 Description: ${prompt.description}\n`);
+
+  // Loop through the arguments and ask the user for input with validation
   for (const arg of prompt.arguments ?? []) {
-    args[arg.name] = await input({
-      message: `Enter value for ${arg.name}:`,
-    });
+    let validator:
+      | ((value: string) => { isValid: boolean; error?: string })
+      | undefined;
+
+    // Add specific validation based on argument name
+    if (arg.name.toLowerCase().includes("style")) {
+      validator = validateStyle;
+    } else if (arg.name.toLowerCase().includes("email")) {
+      validator = validateEmail;
+    }
+
+    args[arg.name] = await getValidatedInput(
+      `Enter value for ${arg.name}:`,
+      validator
+    );
   }
-  // 🔗 CLIENT → SERVER: "Give me the prompt template"
-  const response = await mcp.getPrompt({
-    name: prompt.name, // ← "generate-fake-user"
-    arguments: args,
-  });
 
-  for (const message of response.messages) {
-    const result = await handleServerMessagePrompt(message);
-    async function handlePrompt(prompt: Prompt) {
-      // Gets prompt arguments from you
-      const args: Record<string, string> = {};
+  try {
+    console.log("🚀 Getting prompt template...");
+    // CLIENT → SERVER: "Give me the prompt template"
+    const response = await mcp.getPrompt({
+      name: prompt.name,
+      arguments: args,
+    });
 
-      // Calls server to get the prompt template
-      const response = await mcp.getPrompt({
-        name: prompt.name, // ← "generate-fake-user"
-        arguments: args,
-      });
-
-      // Processes each message in the prompt
-      for (const message of response.messages) {
-        const result = await handleServerMessagePrompt(message); // ← This calls AI!
+    for (const message of response.messages) {
+      const result = await handleServerMessagePrompt(message);
+      if (result) {
+        console.log("\n--- AI Generated ---");
+        console.log(result);
+        console.log("-------------------\n");
       }
     }
-    if (result) {
-      console.log("\n--- AI Generated ---");
-      console.log(result);
-      console.log("-------------------\n");
-    }
+  } catch (error) {
+    console.log("❌ Error handling prompt:", (error as Error).message);
+    console.log("Please check your inputs and try again.");
   }
 }
 
 async function handleServerMessagePrompt(message: PromptMessage) {
   if (message.content.type !== "text") return;
+
   // printing the message to the user
   console.log("\n--- Prompt Content ---");
   console.log(message.content.text);
@@ -586,14 +727,24 @@ async function handleServerMessagePrompt(message: PromptMessage) {
 
   if (!run) return;
 
-  // Use AI SDK (the working method)
-  console.log("🤖 Using AI SDK...");
-  const { text } = await generateText({
-    model: google("gemini-2.5-flash"),
-    prompt: message.content.text,
-  });
+  // Use AI SDK with error handling
+  try {
+    console.log("🤖 Using AI SDK...");
+    const { text } = await generateText({
+      model: google("gemini-2.5-flash"),
+      prompt: message.content.text,
+    });
 
-  return text;
+    return text;
+  } catch (error) {
+    console.log("❌ Error generating AI response:", (error as Error).message);
+    console.log("This might be due to:");
+    console.log("- Network connectivity issues");
+    console.log("- Invalid API key");
+    console.log("- AI service temporarily unavailable");
+    console.log("Please check your setup and try again.");
+    return null;
+  }
 }
 
 main().catch(console.error);
