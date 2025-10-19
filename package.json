@@ -5,8 +5,12 @@
     "server:build": "tsc",
     "server:build:watch": "tsc --watch",
     "server:dev": "tsx src/server.ts",
-    "server:inspect": "npx @modelcontextprotocol/inspector npm run server:dev",
-    "client:dev": "tsx src/client.ts"
+    "server:auth": "tsx src/authenticated_client.ts",
+    "server:auth:direct": "tsx src/authenticated_server.ts",
+    "server:inspect": "npx @modelcontextprotocol/inspector npx tsx src/server.ts",
+    "auth:get-token": "tsx src/authenticated_client.ts",
+    "client:dev": "tsx src/client.ts",
+    "client:interactive": "tsx src/interactive_client.ts"
   },
   "keywords": [],
   "author": "",
@@ -14,6 +18,7 @@
   "description": "",
   "devDependencies": {
     "@modelcontextprotocol/inspector": "^0.17.1",
+    "@types/express": "^5.0.3",
     "@types/node": "^24.0.3",
     "tsx": "^4.20.3",
     "typescript": "^5.8.3"
@@ -23,8 +28,12 @@
     "@google/generative-ai": "^0.24.1",
     "@inquirer/prompts": "^7.9.0",
     "@modelcontextprotocol/sdk": "^1.13.0",
+    "@prisma/client": "^6.17.1",
     "ai": "^5.0.72",
     "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "prisma": "^6.17.1",
+    "stytch": "^12.42.1",
     "zod": "^3.25.67"
   }
 }

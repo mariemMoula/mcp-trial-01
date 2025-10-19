@@ -1,19 +1,27 @@
 {
-	"servers": {
-		"mcp-trial-01": {
-			"type": "stdio",
-			"command": "npm",
-			"args": [
-				"run",
-				"server:dev"
-			],
-			"dev" :{
-				"watch": "build/**/*.js",
-				"debug": {
-					"type": "node"
-				}
-			}
-		}
-	},
-	"inputs": []
+  "servers": {
+    "mcp-trial-01": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["tsx", "src/server.ts"],
+      "dev": {
+        "watch": "build/**/*.js",
+        "debug": {
+          "type": "node"
+        }
+      }
+    },
+    "mcp-trial-01-authenticated": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["tsx", "src/authenticated_client.ts"],
+      "dev": {
+        "watch": "build/**/*.js",
+        "debug": {
+          "type": "node"
+        }
+      }
+    }
+  },
+  "inputs": []
 }
