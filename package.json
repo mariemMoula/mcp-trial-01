@@ -10,7 +10,12 @@
     "server:inspect": "npx @modelcontextprotocol/inspector npx tsx src/server.ts",
     "auth:get-token": "tsx src/authenticated_client.ts",
     "client:dev": "tsx src/client.ts",
-    "client:interactive": "tsx src/interactive_client.ts"
+    "client:interactive": "tsx src/interactive_client.ts",
+    "db:migrate": "npx prisma migrate dev",
+    "db:studio": "npx prisma studio",
+    "db:generate": "npx prisma generate",
+    "db:import": "tsx scripts/importUsers.ts",
+    "db:reset": "npx prisma migrate reset"
   },
   "keywords": [],
   "author": "",

@@ -32,181 +32,181 @@ enum PermissionCategory {
 // Stores information about each user
 model User {
   id            String   @id @default(uuid())
-  // ↑ Primary key, auto-generated UUID (like "abc-123-def")
+  // Primary key, auto-generated UUID (like "abc-123-def")
   
   stytchUserId  String   @unique
-  // ↑ The user ID from Stytch (must be unique)
+  // The user ID from Stytch (must be unique)
   
   email         String   @unique
-  // ↑ User's email (must be unique, no duplicates)
+  // User's email (must be unique, no duplicates)
   
   name          String?
-  // ↑ User's name (? means optional, can be null)
+  // User's name (? means optional, can be null)
   
   createdAt     DateTime @default(now())
-  // ↑ When user was created (auto-set to current time)
+  // When user was created (auto-set to current time)
   
   updatedAt     DateTime @updatedAt
-  // ↑ When user was last updated (Prisma updates this)
+  // When user was last updated (Prisma updates this)
   
   // RELATIONSHIPS (connect to other tables)
   sessions      Session[]
-  // ↑ One user can have many sessions
+  // One user can have many sessions
   
   permissions   UserPermission[]
-  // ↑ One user can have many permissions
+  // One user can have many permissions
   
   auditLogs     AuditLog[]
-  // ↑ One user can have many audit log entries
+  //  One user can have many audit log entries
   
   @@map("users")
-  // ↑ In the database, call this table "users" (plural)
+  //  In the database, call this table "users" (plural)
 }
 
 // SESSION TABLE
 // Stores active login sessions (when users are logged in)
 model Session {
   id              String   @id @default(uuid())
-  // ↑ Primary key for this session
+  //  Primary key for this session
   
   userId          String
-  // ↑ Which user does this session belong to?
+  // Which user does this session belong to?
   
   stytchSessionId String   @unique
-  // ↑ Stytch's session ID (unique per session)
+  //  Stytch's session ID (unique per session)
   
   accessToken     String
-  // ↑ The JWT token (like a temporary ID card)
+  // The JWT token (like a temporary ID card)
   
   refreshToken    String?
-  // ↑ Token to get new access token (optional)
+  // Token to get new access token (optional)
   
   expiresAt       DateTime
-  // ↑ When does this session expire?
+  //  When does this session expire?
   
   createdAt       DateTime @default(now())
-  // ↑ When was session created?
+  //  When was session created?
   
   lastUsedAt      DateTime @default(now())
-  // ↑ When was session last used?
+  //  When was session last used?
   
   // RELATIONSHIP
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  // ↑ Each session belongs to ONE user
+  //  Each session belongs to ONE user
   // fields: [userId] = our column
   // references: [id] = points to User.id
   // onDelete: Cascade = if user deleted, delete their sessions too
   
   // INDEXES (make searching faster)
   @@index([userId])
-  // ↑ Fast lookup by userId
+  // Fast lookup by userId
   
   @@index([expiresAt])
-  // ↑ Fast lookup by expiration date
+  // Fast lookup by expiration date
   
   @@map("sessions")
-  // ↑ Database table name
+  // Database table name
 }
 
 // PERMISSION TABLE
 // Defines what actions are possible in the system
 model Permission {
   id          String   @id @default(uuid())
-  // ↑ Primary key
+  // Primary key
   
   name        String   @unique
-  // ↑ Permission name like "tools.create-user" (must be unique)
+  // Permission name like "tools.create-user" (must be unique)
   
   description String?
-  // ↑ What does this permission allow? (optional)
+  // What does this permission allow? (optional)
   
   category    PermissionCategory
-  // ↑ Is this for TOOL, RESOURCE, or PROMPT?
+  // Is this for TOOL, RESOURCE, or PROMPT?
   
   createdAt   DateTime @default(now())
-  // ↑ When was this permission created?
+  // When was this permission created?
   
   // RELATIONSHIP
   userPermissions UserPermission[]
-  // ↑ One permission can belong to many users
+  // One permission can belong to many users
   
   @@map("permissions")
-  // ↑ Database table name
+  // Database table name
 }
 
 // USER_PERMISSION TABLE (JOIN TABLE)
 // Connects users to permissions (many-to-many relationship)
 model UserPermission {
   id           String   @id @default(uuid())
-  // ↑ Primary key
+  // Primary key
   
   userId       String
-  // ↑ Which user?
+  // Which user
   
   permissionId String
-  // ↑ Which permission?
+  //  Which permission?
   
   grantedAt    DateTime @default(now())
-  // ↑ When was this permission granted?
+  // When was this permission granted
   
   grantedBy    String?
-  // ↑ Who granted this permission? (optional)
+  //  Who granted this permission (optional)
   
   // RELATIONSHIPS
   user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  // ↑ Connect to User table
+  // Connect to User table
   
   permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
-  // ↑ Connect to Permission table
+  // Connect to Permission table
   
   // UNIQUE CONSTRAINT
   @@unique([userId, permissionId])
-  // ↑ A user can't have the same permission twice
+  //  A user can't have the same permission twice
   
   // INDEX
   @@index([userId])
-  // ↑ Fast lookup by userId
+  //  Fast lookup by userId
   
   @@map("user_permissions")
-  // ↑ Database table name
+  //  Database table name
 }
 
 // AUDIT_LOG TABLE
 // Security logging - tracks everything users do
 model AuditLog {
   id           String   @id @default(uuid())
-  // ↑ Primary key
+  // Primary key
   
   userId       String
-  // ↑ Who did this action?
+  // Who did this action
   
   action       String
-  // ↑ What did they do? (like "tool.create-user")
+  //  What did they do (like "tool.create-user")
   
   resourceId   String?
-  // ↑ What resource was affected? (optional)
+  //  What resource was affected (optional)
   
   success      Boolean
-  // ↑ Did it work? (true/false)
+  // Did it work (true/false)
   
   errorMessage String?
-  // ↑ If failed, what was the error? (optional)
+  // If failed, what was the error (optional)
   
   metadata     Json?
-  // ↑ Extra info as JSON (optional)
+  // Extra info as JSON (optional)
   
   ipAddress    String?
-  // ↑ User's IP address (optional)
+  // User's IP address (optional)
   
   userAgent    String?
-  // ↑ User's browser/client info (optional)
+  // User's browser/client info (optional)
   
   timestamp    DateTime @default(now())
-  // ↑ When did this happen?
+  // When did this happen
   
   // RELATIONSHIP
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  // ↑ Connect to User table
+  // Connect to User table
   
   // INDEXES (we often search by these fields)
   @@index([userId])
@@ -215,4 +215,36 @@ model AuditLog {
   
   @@map("audit_logs")
   // ↑ Database table name
+}
+
+// ============================================
+// MCP USER MODEL (for MCP tools)
+// ============================================
+
+// Separate from User model (which is for authentication)
+// This stores user data created by MCP tools
+model McpUser {
+  id        Int      @id @default(autoincrement())
+  // ↑ Auto-incrementing ID: 1, 2, 3, ...
+  
+  name      String
+  // User's full name
+  
+  email     String   @unique
+  // User's email (must be unique, no duplicates)
+  
+  address   String
+  // User's address
+  
+  phone     String
+  // User's phone number
+  
+  createdAt DateTime @default(now())
+  // When user was created (auto-set)
+  
+  updatedAt DateTime @updatedAt
+  // When user was last updated (auto-update)
+  
+  @@map("mcp_users")
+  // Table name in database
 }

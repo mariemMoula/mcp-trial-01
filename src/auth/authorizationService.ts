@@ -38,8 +38,14 @@ export async function canAccessResource(
   authContext: AuthContext,
   resourceName: string
 ): Promise<boolean> {
-  const permissionName = `resources.${resourceName}.read`;
-  return hasPermission(authContext, permissionName);
+  // Check both with and without .read suffix for backwards compatibility
+  const permissionWithRead = `resources.${resourceName}.read`;
+  const permissionWithoutRead = `resources.${resourceName}`;
+
+  return (
+    hasPermission(authContext, permissionWithRead) ||
+    hasPermission(authContext, permissionWithoutRead)
+  );
 }
 
 /**
